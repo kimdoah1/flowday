@@ -1,0 +1,11 @@
+# 정혁 담당 기능(일정 추출·회의 분석)에 필요한 패키지.
+# 통합할 때 김도아 님의 api/requirements.txt 에 없는 것만 합친다.
+fastapi
+uvicorn[standard]
+python-multipart      # 파일 업로드(POST /api/meetings) — 팀 requirements 에 없음
+pydantic>=2
+tzdata                # 한국 시간대(Asia/Seoul) — slim 이미지에 없음, 팀 requirements 에 없음
+langchain-google-genai  # Gemini (팀 llm.py 와 같음)
+# 테스트
+pytest
+httpx
