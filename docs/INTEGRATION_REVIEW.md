@@ -3,31 +3,18 @@
 검토일: 2026-11-19. 기준: origin/develop `8190765`, 로컬 `feature/service-integration`.
 공식 규격 참고: `../test/Flowday_Integrated_Working_Copy/docs/Flowday_Team_Development_Guide.md`.
 
-## Git 상태와 권장 PR 순서
+## Git 상태와 PR 순서
 
-- 원래 `../flowday`는 `feature/calendar-ui`, HEAD `2906cf0`. 이미 develop을 병합한 상태였다.
-- 원격보다 13개 앞섰지만 대부분 팀원 커밋/병합 이력이다. 독자적인 기능 13개를 뜻하지 않는다.
-- 미커밋 변경 59개 중 줄바꿈을 제외한 기존 파일의 실질 변경은 CalendarPage, DashboardPage, CSS 3개였다. EventModal과 calendar 유틸은 미추적 상태였다.
-- 원래 작업 폴더와 미커밋 파일을 수정하지 않았다. 새 worktree `../flowday-integration`에서 작업했다.
-- PR #1~#5의 병합은 develop 이력에 존재한다. 원격 브랜치 병합/삭제, push, 강제 push는 수행하지 않았다.
-- **권장: 담당 UI PR → 팀원 리뷰·develop 병합 → 통합 PR.** 자신의 feature에 develop을 받아 테스트하는 것은 정상적인 작업이다. 다른 담당자의 기능 수정까지 한 PR에 섞는 것은 피한다.
-- `feature/calendar-ui-review`는 최신 develop에서 캘린더 담당 변경만 분리한 새 로컬 브랜치다. 기존 `feature/calendar-ui`를 덮어쓰지 않는다.
-- 캘린더 커밋 `cc1632a`: UI/모달/달력 유틸/CSS/프론트 Docker/초기 테스트. 이 커밋은 통합 브랜치의 첫 커밋이기도 하다.
-- API 커밋 `c1b879c`: 일정·후보 PostgreSQL 저장, 기존 책 계획 호환, 일반 목표 계획, API 테스트.
-- 연결 커밋 `f0bfa5e`: 회의 입력·업로드, 선택 계획 저장, Discord 후보 전달, Worker 오류 확인.
-- 나머지 CI/Compose/검증 문서는 별도 커밋으로 묶는다.
+- 기존 `feature/calendar-ui`를 사용한다. 임시로 만들었던 `feature/calendar-ui-review`는 삭제했으며 사용하지 않는다.
+- 원래 브랜치의 담당 파일을 정리한 커밋은 `1993ac5`이다. 캘린더·대시보드·모달·CSS·프론트 Docker·달력 테스트를 포함하며, 기존 원본 HTML 보관 이력을 유지한다.
+- 줄바꿈만 다른 팀원 파일은 커밋에 포함하지 않았다. 작업 전 백업은 로컬 `/tmp/flowday-before-calendar-pr.tar.gz`에 있다.
+- 캘린더 PR의 대상은 `develop`. 전체 DB/AI/회의/Discord 통합은 `feature/service-integration`의 후속 Draft PR에서 별도로 검토한다.
+- 통합 브랜치에는 로컬 calendar-ui를 병합해 동일한 캘린더 변경이 재적용되지 않도록 이력을 연결했다. develop과 master에는 직접 push하거나 병합하지 않았다.
+- 통합 Draft PR도 base는 develop이다. 캘린더 PR이 먼저 병합되기 전에는 캘린더 변경도 diff에 포함되며, 일반 merge 방식으로 선행 PR을 병합하면 통합 PR에서 해당 변경이 빠진다.
+- 캘린더 PR을 squash 병합한다면 통합 브랜치의 develop 동기화와 중복 변경을 다시 확인한다.
+- 캘린더 리뷰/병합 → 통합 Draft의 각 담당자 검토 → 6개 Actions 확인 → 실제 AI/음성/Discord 리허설 → 통합 PR 병합 순서로 진행한다. PR 병합은 팀원 리뷰 후 수행한다.
 
-게시할 때의 명령(이번 작업에서는 실행하지 않음):
-
-```bash
-git push -u origin feature/calendar-ui-review
-# GitHub: base develop <- compare feature/calendar-ui-review
-# 팀 리뷰 후 병합. 통합 브랜치에도 같은 커밋이 있으므로 일반 merge 방식이면 이력 연결이 쉽다.
-git push -u origin feature/service-integration
-# GitHub: base develop <- compare feature/service-integration
-```
-
-캘린더 PR을 squash 병합한다면 통합 PR의 중복 변경 여부를 다시 비교한 후 develop을 동기화한다. 원래 작업 폴더에서 `git add .`로 59개 파일을 무작정 올리지 않는다.
+통합 구현 커밋: `c1b879c` API, `f0bfa5e` 연결, `19d3ac5` CI/Compose/검증. 초기 캘린더 분리 커밋 `cc1632a`와 실제 담당 브랜치 커밋 `1993ac5`는 병합 시 동일 변경으로 처리됐다.
 
 ## 첨부 통합본과 현재 코드의 차이
 
@@ -47,7 +34,7 @@ git push -u origin feature/service-integration
 | Discord | 기존 봇의 지정 채널 메시지를 기존 추출/후보 클라이언트에 연결. 기존 테스트 48개 통과. 실제 서버/토큰 수신 미검증 |
 | 프론트 | 실 API 기본, VITE_USE_MOCK=true만 Mock. 캘린더·대시보드·모달 렌더링 테스트와 빌드 통과. 브라우저 클릭 시나리오는 미검증 |
 | Docker | 5개 서비스 정의 유지, 자체 이미지 4개 빌드 성공. frontend/api/db 3종 실행·healthy, HTTP 통신과 볼륨 유지 확인 |
-| Actions | 실행 가능한 6개 workflow 구성. 기존 원격 3개 성공 확인, 이번 변경의 원격 실행은 게시 전이라 미검증 |
+| Actions | 실행 가능한 6개 workflow 구성. 기존 원격 3개 성공 확인, 이번 변경의 새 PR 실행 결과는 GitHub Checks에서 확인 필요 |
 
 ## 실제 실행 결과
 
@@ -103,7 +90,7 @@ docker-compose -p flowday-integration-check down
 1. **실제 Gemini 응답, 실제 한국어 녹음, Discord 실서버 메시지**는 키/테스트 음성/서버 설정으로 별도 리허설이 필요하다.
 2. 회의 메타데이터는 기존 팀 코드의 메모리 저장소를 유지한다. 서버 재시작 시 회의 처리 상태/결과가 사라진다. 음성 파일 볼륨과 승인된 일정 DB는 유지된다. 처리 중 API를 재시작하지 않는 시연은 가능하지만 영속 회의 큐를 완성한 것은 아니다.
 3. 실시간 메시지 자동 재시도/실패 큐는 아직 없다. 후보 전송 실패는 로그에 남는다.
-4. 새 6개 Actions의 GitHub 성공 기록은 PR 게시 후 확보해야 한다. 로컬 테스트를 원격 Actions 성공으로 대체하지 않는다.
+4. 새 6개 Actions의 GitHub 성공 기록은 PR Checks에서 확인해야 한다. 로컬 테스트를 원격 Actions 성공으로 대체하지 않는다.
 5. 수업에서 사용하지 않은 오픈소스라는 조건은 수업 목록 확인이 필요하다. 현재 구현에 쓰인 **OR-Tools(책 일정 최적화)**와 **faster-whisper(전사)**가 후보이며, 언어·DB 자체는 해당 증거로 세지 않는다.
 6. 달력 CRUD/완료/수정/삭제, 텍스트 회의 분석, 후보 생성→검토→승인, DB 볼륨 유지가 현재 검증된 시연 범위다. 일반 목표의 rule 초안은 AI 실호출과 구분한다.
 7. 브라우저에서 페이지 이동·일정 편집·새로고침 리허설, 팀원 리뷰, 6개 Actions 로그 캡처를 마친 뒤 발표 버전 PR을 만든다.
