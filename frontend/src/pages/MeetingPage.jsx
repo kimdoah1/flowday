@@ -1,32 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { uploadMeeting, getMeeting, createEvent } from '../api/client';
 
 export default function MeetingPage({ onNavigate }) {
   const [name, setName] = useState('팀 프로젝트 주간 회의');
   const [text, setText] = useState('프론트엔드 시안은 11월 12일까지 완료한다.\nAPI 명세는 11월 15일까지 공유한다.');
+  const [file, setFile] = useState(null);
+  const generation = useRef(0);
+  useEffect(() => () => { generation.current += 1; }, []);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleAnalyze = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const current = ++generation.current;
+    setResult(null);
     try {
-      const init = await uploadMeeting(null, name);
-      const pollTimer = setInterval(async () => {
+      const input = file || new File([text], 'meeting.txt', { type: 'text/plain' });
+      const init = await uploadMeeting(input, name);
+      for (let attempt = 0; attempt < 300; attempt++) {
+        if (generation.current !== current) return;
         const res = await getMeeting(init.meeting_id);
-        if (res.status === 'done') {
-          clearInterval(pollTimer);
-          setResult(res);
-          setLoading(false);
-        } else if (res.status === 'failed') {
-          clearInterval(pollTimer);
-          alert('회의 분석 실패: ' + res.error);
-          setLoading(false);
-        }
-      }, 1000);
+        if (generation.current !== current) return;
+        if (res.status === 'done') { setResult(res); return; }
+        if (res.status === 'failed') throw new Error(res.error || '회의 분석 실패');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      throw new Error('분석 대기 시간이 초과되었습니다. Worker 상태를 확인하세요.');
     } catch (err) {
-      alert(err.message);
-      setLoading(false);
+      if (generation.current === current) alert(err.message);
+    } finally {
+      if (generation.current === current) setLoading(false);
     }
   };
 
@@ -65,7 +69,11 @@ export default function MeetingPage({ onNavigate }) {
             </div>
             <div className="field">
               <label>회의 내용 텍스트</label>
-              <textarea value={text} onChange={(e) => setText(e.target.value)} required rows={8} />
+              <textarea value={text} onChange={(e) => setText(e.target.value)} required={!file} rows={8} />
+            </div>
+            <div className="field">
+              <label>회의 파일 (선택하면 텍스트 대신 분석)</label>
+              <input type="file" accept=".txt,.mp3,.m4a,.wav,.webm,.ogg" onChange={e => setFile(e.target.files[0] || null)} />
             </div>
             <button className="btn primary" type="submit" style={{ width: '100%' }} disabled={loading}>
               {loading ? '분석 처리 중...' : '✦ 요약 및 일정 추출'}

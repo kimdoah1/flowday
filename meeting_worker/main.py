@@ -66,7 +66,7 @@ def process_waiting_meetings() -> int:
             body = {"transcript": text} if text else {"error": "녹음에서 말소리를 찾지 못했습니다."}
         except Exception as exc:  # 파일 손상 등
             body = {"error": f"전사 실패: {exc}"}
-        requests.post(f"{API_URL}/api/meetings/{meeting_id}/result", json=body, timeout=30)
+        requests.post(f"{API_URL}/api/meetings/{meeting_id}/result", json=body, timeout=60).raise_for_status()
         print(f"[worker] 회의 {meeting_id} 완료: {'error' if 'error' in body else 'done'}", flush=True)
         count += 1
     return count

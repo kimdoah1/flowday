@@ -1,6 +1,6 @@
 import * as mock from './mock';
 
-const USE_MOCK = true;
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 const BASE_URL = '/api';
 
 const request = async (url, options = {}) => {
@@ -10,7 +10,7 @@ const request = async (url, options = {}) => {
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ detail: '요청 처리 실패' }));
-    throw new Error(errorData.detail || '서버 오류');
+    throw new Error(typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail || '서버 오류'));
   }
   return res.status === 204 ? null : res.json();
 };
@@ -52,6 +52,10 @@ export const uploadMeeting = async (file, name) => {
   if (file) formData.append('file', file);
   if (name) formData.append('name', name);
   const res = await fetch(`${BASE_URL}/meetings`, { method: 'POST', body: formData });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : '회의 업로드 실패');
+  }
   return res.json();
 };
 

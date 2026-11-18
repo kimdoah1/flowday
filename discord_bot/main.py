@@ -9,6 +9,9 @@ import os
 import re
 from datetime import datetime, timedelta
 
+import httpx
+from flowday_later.api_client import process_message
+
 import discord
 from dotenv import load_dotenv
 
@@ -45,6 +48,7 @@ NO_PING = discord.AllowedMentions.none()
 class ScheduleBot(discord.Client):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.api = httpx.AsyncClient(base_url=os.getenv("API_URL", "http://api:8000"), timeout=60)
         self.llm = GeminiClient()  # GEMINI_API_KEY 환경 변수를 읽는다
         self.resets = ResetStore()  # 채널별 초기화 시점
         self.busy: set[int] = set() # 분석 중인 채널 (같은 채널 동시 요청 방지)
@@ -58,6 +62,7 @@ class ScheduleBot(discord.Client):
             log.info("AI 모델 준비됨: %s", LLM_MODEL)
 
     async def close(self):
+        await self.api.aclose()
         await self.llm.aclose()
         await super().close()
 
@@ -78,6 +83,13 @@ class ScheduleBot(discord.Client):
             await message.reply("🔄 초기화했어요. 지금부터 나오는 대화만 새 일정으로 분석할게요.",
                                 allowed_mentions=NO_PING)
             return
+
+        if DISCORD_CHANNEL_ID and is_schedule_message(message.content):
+            try:
+                await process_message(self.api, message.content, message.id,
+                                      message.created_at.astimezone(KST).date().isoformat())
+            except httpx.HTTPError:
+                log.exception("Flowday 후보 전송 실패: message_id=%s", message.id)
 
         if mentioned:
             await self.handle_mention(message, request)
