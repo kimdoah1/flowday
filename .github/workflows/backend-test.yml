@@ -1,0 +1,27 @@
+# 백엔드(FastAPI) 단위 테스트 — 담당: 정혁
+# api/ 폴더가 바뀐 PR 에서 api/tests 의 pytest 를 실행한다.
+# 실제 LLM(Gemini)은 부르지 않는다: LLM_MODE=rule + 테스트 안의 가짜 LLM. API 키가 필요 없다.
+name: backend-test
+
+on:
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/backend-test.yml"
+
+jobs:
+  backend-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 의존성 설치
+        run: pip install -r api/requirements.txt -r api/requirements-meeting-ai.txt
+      - name: 백엔드 단위 테스트 (LLM은 부르지 않음)
+        working-directory: api
+        env:
+          LLM_MODE: rule
+        # python -m pytest: api 폴더를 import 경로에 넣어 app 패키지를 찾게 한다
+        run: python -m pytest -v
