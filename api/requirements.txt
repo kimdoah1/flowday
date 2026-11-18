@@ -7,3 +7,6 @@ langchain
 ortools
 pytest
 langchain-google-genai
+python-multipart
+tzdata
+httpx
