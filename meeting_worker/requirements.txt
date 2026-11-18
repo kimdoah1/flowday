@@ -1,2 +1,4 @@
-
-# 추후 Whisper 등 음성 인식 패키지 추가
+faster-whisper
+# av 16 이상은 faster-whisper 1.2 와 맞지 않아(metadata_errors 오류) 버전을 묶는다.
+av>=12,<16
+requests
