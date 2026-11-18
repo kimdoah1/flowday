@@ -4,4 +4,6 @@ sqlmodel
 psycopg[binary]
 python-dotenv
 langchain
-langchain-anthropic
+ortools
+pytest
+langchain-google-genai
