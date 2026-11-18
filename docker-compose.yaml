@@ -1,59 +1,66 @@
-
 services:
   db:
     image: postgres:16-alpine
-    container_name: calendar-db
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-calendar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calendar}
+      POSTGRES_DB: ${POSTGRES_DB:-calendar}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U calendar -d calendar"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
-      retries: 10
-
+      retries: 20
   api:
     build: ./api
-    container_name: calendar-api
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-calendar}:${POSTGRES_PASSWORD:-calendar}@db:5432/${POSTGRES_DB:-calendar}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_MODE: ${LLM_MODE:-auto}
+      AUDIO_DIR: /data/audio
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     volumes:
       - audio-data:/data/audio
     depends_on:
       db:
         condition: service_healthy
-
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
   frontend:
-    image: nginx:alpine
-    container_name: calendar-frontend
+    build: ./frontend
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-8080}:80"
     depends_on:
-      - api
-
+      api:
+        condition: service_healthy
   meeting-worker:
     build: ./meeting_worker
-    container_name: calendar-meeting-worker
-    env_file:
-      - .env
+    environment:
+      API_URL: http://api:8000
+      AUDIO_DIR: /data/audio
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
     volumes:
       - audio-data:/data/audio
     depends_on:
-      - api
-
+      api:
+        condition: service_healthy
   discord-bot:
     build: ./discord_bot
-    container_name: calendar-discord-bot
-    env_file:
-      - .env
+    environment:
+      API_URL: http://api:8000
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
     depends_on:
-      - api
-
+      api:
+        condition: service_healthy
 volumes:
   db-data:
   audio-data:

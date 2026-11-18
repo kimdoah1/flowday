@@ -1,0 +1,23 @@
+name: integration-test
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    env:
+      LLM_MODE: rule
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: docker compose up -d --build --wait db api frontend
+      - run: python scripts/integration_smoke.py
+      - name: Verify data survives container recreation
+        run: |
+          docker compose exec -T db psql -U calendar -d calendar -c "INSERT INTO events(title,start_at,end_at) VALUES ('volume-check',now(),now()+interval '1 hour');"
+          docker compose up -d --force-recreate --wait db api frontend
+          python -c "import json,urllib.request; assert any(e['title']=='volume-check' for e in json.load(urllib.request.urlopen('http://localhost:8080/api/events'))['events'])"
+      - if: always()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down
