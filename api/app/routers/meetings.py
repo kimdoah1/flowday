@@ -23,6 +23,8 @@ import tempfile
 import threading
 from pathlib import Path
 
+from starlette.concurrency import run_in_threadpool
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
@@ -100,7 +102,7 @@ async def upload_meeting(file: UploadFile = File(...), name: str | None = Form(N
             text = data.decode("utf-8-sig")
         except UnicodeDecodeError:
             text = data.decode("cp949", errors="replace")  # 윈도우 메모장 기본 인코딩 대비
-        _finish(meeting, text)
+        await run_in_threadpool(_finish, meeting, text)
     else:
         filename = f"{meeting['meeting_id']}{ext}"
         (_audio_dir() / filename).write_bytes(data)
