@@ -29,7 +29,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: nginx:alpine
+    build: ./frontend
     container_name: calendar-frontend
     ports:
       - "80:80"

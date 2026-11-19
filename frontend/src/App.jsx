@@ -102,7 +102,7 @@ export default function App() {
           </div>
         </header>
 
-        {currentView === 'dashboard' && <DashboardPage />}
+        {currentView === 'dashboard' && <DashboardPage onNavigate={setCurrentView} />}
         {currentView === 'calendar' && <CalendarPage />}
         {currentView === 'planner' && <PlanPage onNavigate={setCurrentView} />}
         {currentView === 'meetings' && <MeetingPage onNavigate={setCurrentView} />}
