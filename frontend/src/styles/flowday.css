@@ -117,3 +117,27 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .dashboard-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:20px}.stat-card{padding:21px}.stat-icon{display:inline-grid;place-items:center;background:var(--light-purple);color:var(--purple);height:34px;width:34px;border-radius:10px}.stat-label{font-size:11px;color:var(--muted);font-weight:700;margin:15px 0 6px}.stat-value{font-size:29px}.upcoming-row{display:flex;gap:11px;align-items:flex-start;border-bottom:1px solid var(--border);padding:14px 0}.upcoming-row:last-child{border:0}.upcoming-row strong{font-size:12px}.upcoming-row .helper{margin:6px 0 0}.progress-track{margin-top:22px;background:#f0eff6;height:10px;border-radius:20px;overflow:hidden}.progress-track>span{display:block;height:100%;background:var(--purple);border-radius:20px}.progress-caption{color:var(--muted);font-size:12px;margin:10px 0}
 @media(max-width:1050px){.calendar-layout{grid-template-columns:1fr}.dashboard-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.sidebar{width:72px;padding:14px 8px}.brand>div,.workspace-picker,.nav-heading,.nav-link:not(.active) .tag-new,.nav-link:not(.active) .nav-count,.project-links,.sidebar-bottom,.nav-link{font-size:0}.brand{padding:0;justify-content:center}.nav-link{justify-content:center}.nav-ico{font-size:19px}.main-content .content{padding:18px}.topbar{padding:0 16px}.dashboard-stats{gap:8px}.calendar-day{min-height:75px}.calendar-chip{font-size:8px}.two-column{grid-template-columns:1fr}}
+
+.calendar-view-controls {display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.calendar-view-switch {display:flex;gap:8px;flex-wrap:wrap}
+.calendar-heading {flex-wrap:wrap;gap:14px}
+.calendar-toolbar {flex-wrap:wrap;align-items:center}
+.calendar-toolbar select {width:auto;min-width:76px;border:1px solid var(--border);border-radius:8px;padding:7px 9px;background:white;color:var(--ink);font:inherit}
+.calendar-date-group {margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.calendar-date-group .panel-head {flex-wrap:wrap;gap:10px}
+
+.calendar-year-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.calendar-mini {padding:14px}
+.calendar-mini h3 {margin:0 0 10px;font-size:15px}
+.calendar-mini h3 button {display:flex;justify-content:space-between;width:100%}
+.mini-weekdays {text-align:center;font-size:10px;color:var(--muted);margin-bottom:5px}
+.mini-day {border:0;background:transparent;min-width:0;min-height:30px;padding:3px 0;border-radius:7px;color:var(--ink);font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mini-day:hover,.mini-day:focus-visible {background:#ece8ff;outline:2px solid var(--purple);outline-offset:-2px}
+.mini-day.selected {background:#f0edff}
+.mini-day.today {background:var(--purple);color:white;font-weight:800}
+.mini-dots {display:flex;justify-content:center;gap:2px;height:6px;margin-top:2px}
+.mini-dots .event-dot {width:4px;height:4px;margin:0}
+.mini-day.today .event-dot {background:white}
+@media(max-width:1200px){.calendar-year-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:950px){.calendar-year-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.calendar-year-grid{grid-template-columns:1fr}.mini-day{min-height:36px}}
