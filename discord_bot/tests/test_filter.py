@@ -34,3 +34,8 @@ def test_non_schedule_messages(text):
 
 def test_empty_message():
     assert is_schedule_message("") is False
+
+
+def test_month_and_year_expressions_reach_analysis():
+    for text in ['이번달 여행 가자', '이번 달 회의', '다음 달 모이자', '올해 프로젝트', '내년 프로젝트', '월말 정리', '연말 행사']:
+        assert is_schedule_message(text)

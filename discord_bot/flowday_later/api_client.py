@@ -53,7 +53,7 @@ def build_proposal_payload(event: dict, original_text: str, external_id: str) ->
 
 async def extract_events(http: httpx.AsyncClient, text: str, base_date: str) -> list[dict]:
     """POST /api/ai/extract → {"events": [...]} 의 events 배열. 일정이 없으면 []."""
-    res = await http.post("/api/ai/extract", json={"text": text, "base_date": base_date})
+    res = await http.post("/api/ai/extract", json={"text": text, "base_date": base_date, "suggest_if_uncertain": True})
     res.raise_for_status()
     return res.json().get("events", [])
 
