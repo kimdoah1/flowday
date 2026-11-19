@@ -6,7 +6,9 @@ export default function PlanPage({ onNavigate }) {
   const [description, setDescription] = useState('React, FastAPI, PostgreSQL, Docker Compose 연동');
   const [deadline, setDeadline] = useState('2026-11-20');
   const [intensity, setIntensity] = useState('balanced');
+  const [mode, setMode] = useState('');
   const [tasks, setTasks] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async (e) => {
@@ -20,7 +22,8 @@ export default function PlanPage({ onNavigate }) {
         deadline,
         intensity
       });
-      setTasks(res.tasks || []);
+      setMode(res.mode || '');
+      setTasks((res.tasks || []).map(t => ({ ...t, selected: true })));
     } catch (err) {
       alert(err.message);
     } finally {
@@ -29,9 +32,10 @@ export default function PlanPage({ onNavigate }) {
   };
 
   const handleSaveToCalendar = async () => {
-    if (!tasks.length) return;
+    if (!tasks.length || saving) return;
+    setSaving(true);
     try {
-      for (const t of tasks) {
+      for (const t of tasks.filter(task => task.selected && !task.saved)) {
         await createEvent({
           title: t.title,
           start_at: `${t.date}T09:00:00+09:00`,
@@ -40,11 +44,15 @@ export default function PlanPage({ onNavigate }) {
           memo: `목표: ${goal}`,
           done: false
         });
+        t.saved = true;
+        setTasks(current => current.map(item => item === t ? { ...item, saved: true } : item));
       }
-      alert(`${tasks.length}개 일정이 캘린더에 성공적으로 저장되었습니다.`);
+      alert('선택한 일정이 캘린더에 저장되었습니다.');
       if (onNavigate) onNavigate('calendar');
     } catch (err) {
-      alert('일정 저장 중 오류가 발생했습니다.');
+      alert('일정 저장 중 오류가 발생했습니다. 이미 저장한 항목은 재시도에서 제외됩니다.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -96,6 +104,7 @@ export default function PlanPage({ onNavigate }) {
           <div className="panel-head">
             <h3 className="panel-title">생성된 실행 계획</h3>
           </div>
+          {mode === 'rule' && <p role="status">규칙 기반 초안입니다. 실제 AI 호출 결과가 아닙니다.</p>}
           {tasks.length === 0 ? (
             <div className="result-empty">
               <div className="empty-icon">✧</div>
@@ -105,6 +114,7 @@ export default function PlanPage({ onNavigate }) {
             <div>
               {tasks.map((task, idx) => (
                 <div key={idx} className="step-row">
+                  <input type="checkbox" aria-label={`${task.title} 선택`} checked={task.selected} disabled={task.saved} onChange={e => setTasks(current => current.map((t, i) => i === idx ? { ...t, selected: e.target.checked } : t))} />
                   <div className="step-number">{idx + 1}</div>
                   <div className="step-body">
                     <strong>{task.title}</strong>
@@ -113,8 +123,8 @@ export default function PlanPage({ onNavigate }) {
                 </div>
               ))}
               <div className="result-action">
-                <button className="btn primary" onClick={handleSaveToCalendar}>
-                  ▣ {tasks.length}개 일정 캘린더 등록
+                <button className="btn primary" disabled={saving || !tasks.some(t => t.selected && !t.saved)} onClick={handleSaveToCalendar}>
+                  ▣ 선택 일정 캘린더 등록
                 </button>
               </div>
             </div>

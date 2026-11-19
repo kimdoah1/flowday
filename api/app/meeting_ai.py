@@ -21,6 +21,7 @@ AI(LLM) 사용 규칙 — 팀 LLM 은 Gemini
 
 from __future__ import annotations
 
+import calendar
 import logging
 import os
 import re
@@ -111,6 +112,30 @@ def _find_date(sentence: str, base: date) -> date | None:
     if m:
         try:
             return date(int(m[1]), int(m[2]), int(m[3]))
+        except ValueError:
+            return None
+
+    compact = re.sub(r"\s+", "", sentence)
+    # Explicit year/month references and period-end dates remain deterministic.
+    year = base.year + (1 if '내년' in compact else 0)
+    month = base.month
+    if '다음달' in compact:
+        month = base.month % 12 + 1
+        year = base.year + (base.month == 12)
+    if any(word in compact for word in ['올해마지막날', '내년마지막날', '이번해마지막날', '연말']):
+        return date(year, 12, 31)
+    if '월말' in compact or (any(w in compact for w in ['이번달', '다음달']) and any(w in compact for w in ['말일', '마지막날'])):
+        return date(year, month, calendar.monthrange(year, month)[1])
+    day_match = re.search(r"(이번달|다음달)(\d{1,2})일", compact)
+    if day_match:
+        try:
+            return date(year, month, int(day_match[2]))
+        except ValueError:
+            return None
+    explicit = re.search(r"(?:(\d{4})년|올해|내년|이번해)(\d{1,2})월(\d{1,2})일", compact)
+    if explicit:
+        try:
+            return date(int(explicit[1]) if explicit[1] else year, int(explicit[2]), int(explicit[3]))
         except ValueError:
             return None
 
@@ -308,6 +333,8 @@ def _llm_extract(text: str, base: date) -> list[dict]:
         f"기준 날짜: {base.isoformat()} ({WEEKDAYS[base.weekday()]}요일), 시간대: Asia/Seoul\n"
         "규칙:\n"
         "- '다음 주 월요일' 같은 상대 날짜는 기준 날짜로 계산해 YYYY-MM-DD 로 바꾼다.\n"
+        "- 이번 달/다음 달/올해/내년/월말/연말은 기준 날짜의 달력으로 계산한다.\n"
+        "- 이번 달에 회의처럼 일자가 없으면 date는 null이다. 임의의 날짜를 정하지 않는다.\n"
         "- 날짜를 확실히 알 수 없으면 date 를 null 로 둔다. 추측해서 만들지 않는다.\n"
         "- 시각이 언급되지 않았으면 start_time 을 null 로 둔다.\n"
         "- 일정이 없으면 events 를 빈 배열로 둔다.\n\n"

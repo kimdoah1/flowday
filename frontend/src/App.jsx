@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { listProposals } from './api/client';
 import PlanPage from './pages/PlanPage';
 import MeetingPage from './pages/MeetingPage';
 import InboxPage from './pages/InboxPage';
@@ -8,12 +9,34 @@ import CalendarPage from './pages/CalendarPage';
 export default function App() {
   const [currentView, setCurrentView] = useState('planner');
 
+  const [proposals, setProposals] = useState([]);
+  const [proposalError, setProposalError] = useState('');
+  const requestVersion = useRef(0);
+  const refreshProposals = useCallback(async () => {
+    const version = ++requestVersion.current;
+    try {
+      const result = await listProposals();
+      if (version !== requestVersion.current) return;
+      setProposals((result.proposals ?? []).filter(p => p.status === 'pending'));
+      setProposalError('');
+    } catch (err) {
+      if (version !== requestVersion.current) return;
+      setProposalError(err.message || '검토함 조회 실패');
+    }
+  }, []);
+  useEffect(() => {
+    refreshProposals();
+    const timer = setInterval(refreshProposals, 5000);
+    window.addEventListener('focus', refreshProposals);
+    return () => { clearInterval(timer); window.removeEventListener('focus', refreshProposals); requestVersion.current++; };
+  }, [refreshProposals]);
+
   const navItems = [
     { key: 'dashboard', label: '대시보드', ico: '▦' },
     { key: 'calendar', label: '캘린더', ico: '▣' },
     { key: 'planner', label: 'AI 계획 세분화', ico: '✧', tag: 'AI' },
     { key: 'meetings', label: '회의록 분석', ico: '◉', tag: 'AI' },
-    { key: 'inbox', label: '채팅 일정 추출', ico: '▤', count: '3' },
+    { key: 'inbox', label: '채팅 일정 추출', ico: '▤', count: proposalError ? 0 : proposals.length },
   ];
 
   const viewNames = {
@@ -54,7 +77,7 @@ export default function App() {
             >
               <span className="nav-ico">{item.ico}</span> {item.label}
               {item.tag && <span className="tag-new">{item.tag}</span>}
-              {item.count && <span className="nav-count">{item.count}</span>}
+              {item.count > 0 && <span className="nav-count">{item.count}</span>}
             </button>
           ))}
         </nav>
@@ -106,7 +129,7 @@ export default function App() {
         {currentView === 'calendar' && <CalendarPage />}
         {currentView === 'planner' && <PlanPage onNavigate={setCurrentView} />}
         {currentView === 'meetings' && <MeetingPage onNavigate={setCurrentView} />}
-        {currentView === 'inbox' && <InboxPage />}
+        {currentView === 'inbox' && <InboxPage proposals={proposals} error={proposalError} onRefresh={refreshProposals} />}
       </main>
     </div>
   );

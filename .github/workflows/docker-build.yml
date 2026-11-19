@@ -1,0 +1,13 @@
+name: docker-build
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [frontend, api, meeting-worker, discord-bot]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build ${{ matrix.service }}

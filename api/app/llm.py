@@ -25,7 +25,9 @@ def ask_llm(prompt, output_model):
         model=model_name,
         google_api_key=api_key,
         temperature=0,
-        max_output_tokens=8192
+        max_output_tokens=8192,
+        timeout=45,
+        max_retries=0
     )
 
     print("B. 구조화된 출력 설정", flush=True)

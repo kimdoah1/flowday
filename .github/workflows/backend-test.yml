@@ -5,13 +5,24 @@ name: backend-test
 
 on:
   pull_request:
-    paths:
-      - "api/**"
-      - ".github/workflows/backend-test.yml"
+  workflow_dispatch:
 
 jobs:
   backend-unit-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: calendar
+          POSTGRES_PASSWORD: calendar
+          POSTGRES_DB: calendar
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U calendar -d calendar"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://calendar:calendar@localhost:5432/calendar
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

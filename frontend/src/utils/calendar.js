@@ -18,3 +18,21 @@ export function eventsForDay(events, day) {
 }
 export function countDone(events) { return events.filter(event => event.done).length; }
 export const SOURCE_LABEL = { manual:'직접 등록', ai_plan:'AI 계획', meeting:'회의', discord:'Discord' };
+
+// Keep the selected day when changing month, clamping to the month's last day.
+export function dateInMonth(selected, year, monthIndex) {
+  const month = new Date(year, monthIndex, 1);
+  const last = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const day = Math.min(Number(selected.slice(8, 10)) || 1, last);
+  return dateKey(new Date(month.getFullYear(), month.getMonth(), day));
+}
+
+export function groupEventsByDay(events) {
+  const groups = new Map();
+  for (const event of [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at))) {
+    const day = event.start_at.slice(0, 10);
+    if (!groups.has(day)) groups.set(day, []);
+    groups.get(day).push(event);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
